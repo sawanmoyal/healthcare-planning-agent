@@ -1,0 +1,122 @@
+{
+  "hospital_info": {
+    "name": "CityCare MultiSpeciality Hospital",
+    "location": "Indore",
+    "type": "Private",
+    "total_beds": 150,
+    "icu_beds": 20,
+    "emergency_available": true
+  },
+
+  "staff": {
+    "endocrinologist": 2,
+    "general_physician": 5,
+    "cardiologist": 2,
+    "nurses": 20,
+    "dietitian": 2,
+    "exercise_specialist": 1,
+    "lab_technician": 4,
+    "pharmacist": 3,
+    "nurse_educator": 2,
+    "diabetes_counselor": 1
+  },
+
+  "laboratory_services": {
+    "hba1c_test": true,
+    "fasting_glucose_test": true,
+    "lipid_profile": true,
+    "kidney_function_test": true,
+    "liver_function_test": true,
+    "urinalysis": true,
+    "thyroid_test": true,
+    "cbc_test": true
+  },
+
+  "diagnostic_equipment": {
+    "glucometer": 25,
+    "bp_monitor": 30,
+    "ecg_machine": 5,
+    "ultrasound": 2,
+    "xray_machine": 2,
+    "ct_scan": 1,
+    "mri": 1
+  },
+
+  "medications": {
+    "metformin": {
+      "available": true,
+      "stock": 500
+    },
+    "sulfonylureas": {
+      "available": true,
+      "stock": 300
+    },
+    "dpp4_inhibitors": {
+      "available": true,
+      "stock": 200
+    },
+    "insulin": {
+      "available": true,
+      "stock": 150
+    },
+    "glp1_agonists": {
+      "available": false,
+      "stock": 0
+    },
+    "statins": {
+      "available": true,
+      "stock": 250
+    }
+  },
+
+  "lifestyle_support": {
+    "diet_counseling": true,
+    "exercise_program": true,
+    "stress_management_program": false,
+    "yoga_sessions": true,
+    "group_education_classes": true
+  },
+
+  "monitoring_systems": {
+    "ehr_system": true,
+    "patient_portal": true,
+    "sms_reminder_system": true,
+    "remote_glucose_monitoring": false,
+    "telemedicine_support": true
+  },
+
+  "appointment_system": {
+    "online_booking": true,
+    "average_wait_time_minutes": 25,
+    "followup_interval_days": 90
+  },
+
+  "inventory": {
+    "glucose_test_strips": 2000,
+    "insulin_syringes": 1500,
+    "iv_sets": 500,
+    "glucometer_batteries": 200,
+    "patient_education_brochures": 1000
+  },
+
+  "budget": {
+    "monthly_medication_budget": 500000,
+    "lab_budget": 300000,
+    "staff_salary_budget": 2000000,
+    "equipment_maintenance_budget": 150000
+  },
+
+  "risk_management": {
+    "emergency_protocol_available": true,
+    "hypoglycemia_management_kit": true,
+    "hyperglycemia_management_kit": true,
+    "critical_care_support": true
+  },
+
+  "quality_control": {
+    "audit_system": true,
+    "monthly_review_meeting": true,
+    "patient_feedback_system": true,
+    "clinical_guidelines_available": true
+  }
+}
