@@ -56,20 +56,5 @@ This system showcases multi-step reasoning and planning in a dynamic environment
 
 ---
 
-## 📂 Project Structure
-healthcare-planning-agent/
-│
-├── agents/
-│   └── planner_agent.py
-│
-├── tasks/
-│   └── planning_tasks.py
-│
-├── tools/
-│   └── resource_checker.py
-│
-├── main.py
-├── .env
-├── README.md
-└── venv/
+
 
