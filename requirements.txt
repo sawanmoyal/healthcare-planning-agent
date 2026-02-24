@@ -2,3 +2,6 @@ langchain
 langchain-groq
 crewai
 python-dotenv
+streamlit
+httpx
+pandas

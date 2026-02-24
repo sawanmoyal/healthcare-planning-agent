@@ -1,7 +1,10 @@
 import os
 import warnings
 
-# Disable LiteLLM / CrewAI Logs
+# =============================
+# ENV CONFIG
+# =============================
+
 os.environ["LITELLM_MODE"] = "client"
 os.environ["LITELLM_DISABLE_LOGGING"] = "true"
 os.environ["LITELLM_LOG"] = "ERROR"
@@ -10,49 +13,59 @@ os.environ["CREWAI_TRACING_ENABLED"] = "false"
 
 warnings.filterwarnings("ignore")
 
-# Imports
+# =============================
+# IMPORTS
+# =============================
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+
 from crewai import Crew
 from agents.planner_agent import create_planner_agent
 from tasks.planning_tasks import create_planning_task
 from tools.resource_checker import ResourceChecker
 
+# =============================
+# FASTAPI APP
+# =============================
 
-# Main Function
-def main():
+app = FastAPI(
+    title="Healthcare Planning Agent API"
+)
 
-    print("\n=== Healthcare Planning Assistant ===\n")
+# =============================
+# REQUEST MODEL
+# =============================
 
-    # Take input
-    goal = input("Enter Healthcare Goal: ").strip()
+class PlanRequest(BaseModel):
+    patient_name: str | None = None
+    age: int | None = None
+    condition: str | None = None
+    priority: str | None = None
+    requirements: str
 
-    if not goal:
-        print("❌ Goal cannot be empty.")
-        return
 
-    # Create Agent
+# =============================
+# CORE PLANNER FUNCTION
+# =============================
+
+def run_planner(goal: str):
+
     planner = create_planner_agent()
 
-    # Create Task
     planning_task = create_planning_task(planner, goal)
 
-    # Create Crew
     crew = Crew(
         agents=[planner],
         tasks=[planning_task],
         verbose=False
     )
 
-    
-    result = crew.kickoff()   #result
+    result = crew.kickoff()
 
-    # Print Generated Plan
-    print("\n=== Generated Plan ===\n")
-    print(result)
-
-    # Resource Checking
     checker = ResourceChecker()
 
-    print("\n=== Resource Check ===\n")
+    resource_status = []
 
     for line in str(result).split("\n"):
 
@@ -61,17 +74,36 @@ def main():
         if not line:
             continue
 
-        # Remove markdown
         clean_line = line.replace("*", "")
 
-        # Only check main steps
         if clean_line.lower().startswith("step") and ":" in clean_line:
 
             status = checker.check_resources(clean_line)
 
-            print(f"{clean_line} -> {'Available' if status else 'Not Available'}")
+            resource_status.append({
+                "step": clean_line,
+                "available": status
+            })
+
+    return {
+        "summary": str(result),
+        "resource_check": resource_status
+    }
 
 
-# Run Program
-if __name__ == "__main__":
-    main()
+# =============================
+# API ENDPOINT
+# =============================
+
+@app.post("/plan")
+async def generate_plan(data: PlanRequest):
+
+    result = run_planner(data.requirements)
+
+    return result
+
+
+# Optional health check
+@app.get("/")
+async def root():
+    return {"status": "Healthcare Planning API running"}
