@@ -1,20 +1,11 @@
 """
 Streamlit Frontend for Healthcare Planning Agent
-
-Features:
-- Sidebar Navigation
-- Input Form with validation
-- API calls to FastAPI backend
-- Loading indicators
-- Error handling
-- Structured results display
+Compatible with new FastAPI main.py
 """
 
 import streamlit as st
 import httpx
 import pandas as pd
-import json
-import time
 
 # ============================
 # CONFIG
@@ -22,67 +13,71 @@ import time
 
 st.set_page_config(
     page_title="Healthcare Planning Agent",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-BACKEND_URL = "http://localhost:8000"  # change if deployed
+BACKEND_URL = "http://127.0.0.1:8000"
 
 # ============================
-# SESSION STATE INIT
+# SESSION STATE
 # ============================
 
 if "results" not in st.session_state:
     st.session_state.results = None
 
-if "settings" not in st.session_state:
-    st.session_state.settings = {
-        "backend_url": BACKEND_URL
-    }
+# ============================
+# API FUNCTIONS
+# ============================
 
-# ============================
-# API CLIENT FUNCTIONS
-# ============================
+def check_backend():
+    """Check if backend is alive"""
+    try:
+        r = httpx.get(f"{BACKEND_URL}/", timeout=5)
+        return r.status_code == 200
+    except:
+        return False
+
 
 def call_planning_agent(payload):
-    """
-    Calls FastAPI backend endpoint.
-    Update endpoint path according to your API.
-    """
 
-    url = f"{st.session_state.settings['backend_url']}/plan"
+    url = f"{BACKEND_URL}/plan"
 
     try:
-        with httpx.Client(timeout=60) as client:
+        response = httpx.post(url, json=payload, timeout=300)
 
-            response = client.post(url, json=payload)
+        response.raise_for_status()
 
-            response.raise_for_status()
-
-            return response.json()
+        return response.json()
 
     except httpx.RequestError as e:
-        st.error(f"Connection error: {e}")
+        st.error(f"❌ Connection error: {e}")
+        st.info("Make sure FastAPI backend is running: uvicorn main:app --reload")
         return None
 
     except httpx.HTTPStatusError as e:
-        st.error(f"API Error: {e.response.text}")
+        st.error(f"❌ API Error: {e.response.text}")
         return None
 
 
 # ============================
-# SIDEBAR NAVIGATION
+# SIDEBAR
 # ============================
 
 st.sidebar.title("🧠 Healthcare Agent")
 
+# Backend status indicator
+if check_backend():
+    st.sidebar.success("Backend Connected")
+else:
+    st.sidebar.error("Backend NOT running")
+
 page = st.sidebar.radio(
     "Navigation",
-    ["Home", "Input Form", "Results", "Settings"]
+    ["Home", "Input Form", "Results"]
 )
 
 # ============================
-# HOME PAGE
+# HOME
 # ============================
 
 if page == "Home":
@@ -90,19 +85,17 @@ if page == "Home":
     st.title("🏥 Healthcare Planning Agent")
 
     st.markdown("""
-    Welcome to the AI Healthcare Planner.
+    Generate AI-powered healthcare plans using CrewAI.
 
-    This interface allows you to:
+    Steps:
 
-    - Enter patient data
-    - Submit planning requests
-    - View AI-generated healthcare plans
+    1️⃣ Enter patient details  
+    2️⃣ Submit planning goal  
+    3️⃣ View generated plan
     """)
 
-    st.info("Use the sidebar to start.")
-
 # ============================
-# INPUT FORM PAGE
+# INPUT FORM
 # ============================
 
 elif page == "Input Form":
@@ -114,29 +107,24 @@ elif page == "Input Form":
         col1, col2 = st.columns(2)
 
         with col1:
-            patient_name = st.text_input("Patient Name *")
-            age = st.number_input("Age *", min_value=0, max_value=120)
+            patient_name = st.text_input("Patient Name")
+            age = st.number_input("Age", min_value=0, max_value=120)
 
         with col2:
-            condition = st.text_input("Medical Condition *")
-            priority = st.selectbox(
-                "Priority",
-                ["Low", "Medium", "High"]
-            )
+            condition = st.text_input("Medical Condition")
+            priority = st.selectbox("Priority", ["Low", "Medium", "High"])
 
         requirements = st.text_area(
-            "Planning Requirements / Goal *",
-            placeholder="Example: Create treatment plan..."
+            "Healthcare Goal *",
+            placeholder="Example: 1 week hypertension plan"
         )
 
         submit = st.form_submit_button("Generate Plan")
 
-    # FORM SUBMISSION
     if submit:
 
-        # Validation
-        if not patient_name or not condition or not requirements:
-            st.warning("Please fill all required fields.")
+        if not requirements:
+            st.warning("Healthcare goal is required.")
         else:
 
             payload = {
@@ -156,61 +144,40 @@ elif page == "Input Form":
                     st.success("Plan generated successfully!")
 
 # ============================
-# RESULTS PAGE
+# RESULTS
 # ============================
 
 elif page == "Results":
 
     st.title("📊 Agent Results")
 
-    if not st.session_state.results:
+    result = st.session_state.results
+
+    if not result:
         st.warning("No results yet. Generate a plan first.")
     else:
 
-        result = st.session_state.results
+        tabs = st.tabs(["Summary", "Resource Check", "Raw JSON"])
 
-        tabs = st.tabs(["Summary", "Structured Data", "Charts", "Raw JSON"])
-
-        # --- Summary Tab
+        # SUMMARY
         with tabs[0]:
 
-            if "summary" in result:
-                st.subheader("Plan Summary")
-                st.write(result["summary"])
+            st.subheader("Generated Plan")
 
-        # --- Structured Data Tab
+            st.write(result.get("summary", "No summary available"))
+
+        # RESOURCE CHECK
         with tabs[1]:
 
-            if "steps" in result:
-                df = pd.DataFrame(result["steps"])
-                st.dataframe(df, use_container_width=True)
+            resource_data = result.get("resource_check", [])
 
-        # --- Charts Tab
+            if resource_data:
+                df = pd.DataFrame(resource_data)
+                st.dataframe(df, use_container_width=True)
+            else:
+                st.info("No resource check data.")
+
+        # RAW JSON
         with tabs[2]:
 
-            if "steps" in result:
-                df = pd.DataFrame(result["steps"])
-
-                if "duration" in df.columns:
-                    st.bar_chart(df["duration"])
-
-        # --- Raw JSON Tab
-        with tabs[3]:
             st.json(result)
-
-# ============================
-# SETTINGS PAGE
-# ============================
-
-elif page == "Settings":
-
-    st.title("⚙️ Settings")
-
-    backend_url = st.text_input(
-        "Backend URL",
-        value=st.session_state.settings["backend_url"]
-    )
-
-    if st.button("Save Settings"):
-        st.session_state.settings["backend_url"] = backend_url
-        st.success("Settings saved.")
